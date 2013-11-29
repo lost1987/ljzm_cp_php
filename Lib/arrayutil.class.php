@@ -18,10 +18,9 @@ class ArrayUtil {
 
         $newarray = array();
 
-        for($i =0 ; $i < count($array) ; $i++){
-            if($i >= $start && $i < $limit){
+        for($i =$start ; $i < $limit; $i++){
+            if(!empty($array[$i]))
                 $newarray[] = $array[$i];
-            }
         }
 
         return $newarray;

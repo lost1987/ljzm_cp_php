@@ -128,4 +128,36 @@ function getCSVdata($filename)
     }
 }
 
+/**
+ * 生成纯数字激活码
+ * @param int $num 生成激活码的数量
+ * @return array
+ *
+ */
+function createActiveCodeOnlyNumbers($num=100){
+    $codes = array();
+    for($i=0 ; $i < $num ; $i++){
+        $mictime =  str_replace(array('.',' '),"",microtime(true));
+        $prefix = substr($mictime,0,mt_rand(0,strlen($mictime)-10));
+        $mictime = str_shuffle(strval($mictime).$prefix);//打乱字符中字符的串排列顺序
+        $codes[] = $mictime;
+    }
+    return $codes;
+}
+
+/**
+ * 生成激活码
+ * @param int $num 生成激活码的数量
+ * @return array
+ *
+ */
+function createActiveCode($num=100){
+    $codes = array();
+    for($i=0 ; $i < $num ; $i++){
+        $a = md5(microtime());
+        $codes[] = $a;
+    }
+    return $codes;
+}
+
 ?>

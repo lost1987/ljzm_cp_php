@@ -51,9 +51,10 @@ class SyslogService extends Service
                    $sql = "select account_name from $this->table_player where name = '$log->playername'";
                    $uname = $db -> query($sql) -> result_object() -> account_name;
 
-                   if(empty($uname))return 0;
-                   $db -> close();
-                   unset($db);
+                   if(empty($uname)){
+                       $db -> close();
+                       return 0;
+                   }
 
                    $utime = time();
                    $aid = $server -> bid;//运营商ID
@@ -66,38 +67,35 @@ class SyslogService extends Service
                    if($this->db->select("count(id) as num")->from($this->table_payinfo)->where("eventid='$eventid'")->get()->result_object()->num==0){
                         $base = $this->db->select("*")->from($this->table_base)->where("loginname='$uname'")->get()->result_object();
                         if($base){
-                                $this -> db -> select_db($server->dynamic_dbname);
-                                $player = $this -> db -> select("*")->from($this->table_player)
+                                $player = $db -> select("*")->from($this->table_player)
                                     ->where("account_id = '$base->aountid' and state = 0 and server = $realServerId")->get()->result_object();
                                 if($player){
+                                        $db -> trans_begin();
                                         //以上验证完毕 开始写数据
-                                        $this->db->select_db($this->db_base);
                                         if(!$this->db->query("update $this->table_base set yuanbao=yuanbao+$goldmoney,yuanbaonum=yuanbaonum+1 where aountid=$base->aountid")->queryState){
                                             error_log('数据写入失败1');
                                             throw new Exception("错误代码:-10 数据写入失败");
                                         }
 
-                                       $this->db->select_db($server->dynamic_dbname);
-                                        if(!$this->db->query("update $this->table_player set saveyuanbao=saveyuanbao+$goldmoney,mask31=mask31+$goldmoney where id = $player->id") -> queryState){
+                                        if(!$db->query("update $this->table_player set saveyuanbao=saveyuanbao+$goldmoney,mask31=mask31+$goldmoney where id = $player->id") -> queryState){
                                             error_log('数据写入失败2');
                                             throw new Exception("错误代码:-10 数据写入失败");
                                         }
 
-                                        if(!$this->db->query("insert into $this->table_record (type, id1, id2, param1, param2, param4, str, str2) values(0, $player->id, 0, 90000001,$goldmoney , 44, '".$_SERVER['REMOTE_ADDR']."','$eventid')") -> queryState){
+                                        if(!$db->query("insert into $this->table_record (type, id1, id2, param1, param2, param4, str, str2) values(0, $player->id, 0, 90000001,$goldmoney , 44, '".$_SERVER['REMOTE_ADDR']."','$eventid')") -> queryState){
                                             error_log('数据写入失败3');
                                             throw new Exception("错误代码:-10 数据写入失败");
                                         }
 
-                                       $ht = $this -> db ->query("select * from ht_topup where pid = $player->id") -> result_object();
+                                       $ht = $db ->query("select * from ht_topup where pid = $player->id") -> result_object();
                                        if(!$ht){
-                                           if(!$this->db->query("insert into ht_topup(pid) values($player->id)")->queryState)
+                                           if(!$db->query("insert into ht_topup(pid) values($player->id)")->queryState)
                                            {
                                                error_log('数据写入失败4');
                                                throw new Exception("错误代码:-10 数据写入失败");
                                            }
                                        }
 
-                                       $this ->db -> select_db($this->db_base);
                                        if(!$this->db->query("insert into fr2_payinfo(eventid) values(' $eventid ')")->queryState){
                                            error_log('数据写入失败5');
                                            throw new Exception("错误代码:-10 数据写入失败");
@@ -118,6 +116,8 @@ class SyslogService extends Service
 
                    $this-> db ->commit();
                    $this -> db -> close();
+                   $db -> commit();
+                   $db -> close();
                    return 1;
                }else if($res){//拒绝
                    $this->db->commit();
@@ -129,6 +129,8 @@ class SyslogService extends Service
            }catch (Exception $e){
                 $this->db->rollback();
                 $this->db->close();
+                $db -> rollback();
+                $db -> close();
                 return intval($result);
            }
     }
