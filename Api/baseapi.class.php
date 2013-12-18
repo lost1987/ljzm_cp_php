@@ -33,7 +33,7 @@ class Baseapi
             $bid = $this -> input -> get('bid');
 
             //md5(sha1());
-            $mykey = md5(sha1($time.API_KEY));
+            $mykey = md5($time.API_KEY);
 
             if($mykey != $key || empty($sid) || empty($bid)){
                 echo -1;

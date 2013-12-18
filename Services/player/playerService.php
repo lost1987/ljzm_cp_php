@@ -13,8 +13,8 @@ class PlayerService extends ServerDBChooser
      private $_profession = array('降魔','御法','牧云');
      private $_camp = array(
          1 => '无',
-         17 => '阴阳',
-         33 => '浑沌'
+         17 => '浑沌',
+         33 => '阴阳'
      );
      private $_rightcode = array(0 => '防沉迷',1=>'未沉迷');
      private $_partyjob = array(
@@ -280,11 +280,15 @@ class PlayerService extends ServerDBChooser
            $playername_or_id = $condition->playername_or_id;
            $online = $condition->online;
 
-           $cond = " name like '%$playername_or_id%'";
+           if(!empty($playername_or_id))
+               $cond = " name like '%$playername_or_id%' ";
+           else
+               $cond = '';
            if(is_numeric($playername_or_id))$cond = " id = $playername_or_id";
 
            $condonline = '';
-           if($online)$condonline = ' and defencecap = 1 and state=0';
+           if($online && !empty($playername_or_id))$condonline = ' and defencecap = 1 and state=0';
+           else if($online && empty($playername_or_id))$condonline = '  defencecap = 1 and state=0';
            foreach ($servers as $server){
                $this->dbConnect($server,$server->dynamic_dbname);
                $sql = "select id,name from $this->table_player where $cond $condonline";

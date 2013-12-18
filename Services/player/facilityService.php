@@ -16,12 +16,13 @@ class FacilityService extends ServerDBChooser
     }
 
     public function detail($pid,$server){
-        $this -> dbConnect($server,$this -> db_static);
+        $this -> dbConnect($server,$server -> dynamic_dbname);
+        $db_static = $this->getNewStaticDB();
         $sql = "select id,sw,name from $this->table_sw order by sw asc";
-        $total_sw = $this -> db -> query($sql) -> result_objects();
+        $total_sw = $db_static -> query($sql) -> result_objects();
+        $db_static -> close();
 
 
-        $this -> db -> select_db($server->dynamic_dbname);
         $sql = "select facility1,facility2,facility3 from $this->table_facility where pid = $pid";
         $facility = $this -> db -> query($sql) -> result_object();
         if(!empty($facility->facility1)){

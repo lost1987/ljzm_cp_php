@@ -87,7 +87,7 @@ class Mssql
      * @addonal 扩展方法
      */
 
-    public function select($sql){
+    public function select($sql='*'){
         $this -> _sql = 'SELECT '.$sql;
         return $this;
     }

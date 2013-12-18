@@ -29,13 +29,25 @@ class BuissnesserService extends Service implements IService
         return $res;
     }
 
+    public function listNoPage($condition=null)
+    {
+        // TODO: Implement lists() method.
+        $res = $this->db->select(" a.id,a.name,a.bflag,a.bkey" )
+            -> from($this->table_buissnesser.' a ')
+            -> where(" a.stat = 1 ")
+            -> get()
+            -> result_objects();
+
+        return $res;
+    }
+
     public function save($obj)
     {
         // TODO: Implement save() method.
         $name = $obj -> name;
         $bid = $obj-> bid;
         $bflag = $obj->bflag;
-        $bkey = hash('SHA1',$bflag.BUISSNESSER_SCRECT);
+        $bkey = hash('SHA1',$bflag.BUISSNESSER_SCRECT.time());
 
         //查询标识是否存在
         $validate = $this -> db -> query("select id,bflag from $this->table_buissnesser where bflag='$bflag'") -> result_object();
@@ -83,5 +95,25 @@ class BuissnesserService extends Service implements IService
         }
     }
 
+    public function updatekey($bids){
+            $buissnessers = $this->db->select('bflag,id')->from($this->table_buissnesser)->where(" id in ($bids) ") -> get() -> result_objects();
+            $this->db->trans_begin();
+            try{
+                foreach($buissnessers as $buissnesser){
+                    $id = $buissnesser -> id;
+                    $newkey = hash('SHA1',$buissnesser->bflag.BUISSNESSER_SCRECT.time());
+                    if(!$this->db->query("update $this->table_buissnesser set bkey='$newkey' where id = $id")->queryState)
+                        throw new Exception('update platform key errors');
+                }
+                $this->db->commit();
+               return TRUE;
+            }catch (Exception $e){
+                $this->db->rollback();
+                return FALSE;
+            }
+
+            $this->db->close();
+
+    }
 
 }

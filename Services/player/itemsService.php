@@ -26,11 +26,12 @@ class ItemsService extends  ServerDBChooser
             $item_ids.= $item->itemid.',';
         }
         $item_ids = substr($item_ids,0,strlen($item_ids)-1);
+        $this->db->close();
 
         if(!empty($item_ids)){
-            $this -> db -> select_db($this->db_static);
+            $db_static = $this->getNewStaticDB();
             $sql = "select id,name from $this->table_staticitem where id in ($item_ids)";
-            $itemnames = $this -> db -> query($sql) -> result_objects();
+            $itemnames = $db_static -> query($sql) -> result_objects();
 
             foreach($items as &$item){
                 if(empty($item->strength))$item->strength = 0;
@@ -56,7 +57,7 @@ class ItemsService extends  ServerDBChooser
                 if(count($fw_ids) > 0){
                     $fw_ids = implode(',',$fw_ids);
                     $sql = " select name from $this->table_staticitem where id in ($fw_ids)";
-                    $item -> fws = $this -> db -> query($sql) -> result_objects();
+                    $item -> fws = $db_static -> query($sql) -> result_objects();
                 }
             }
         }

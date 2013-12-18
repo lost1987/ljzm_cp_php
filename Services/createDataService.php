@@ -24,10 +24,11 @@ class CreateDataService extends Service
         $date = $this->db->timestamp('date');
         $timecondition = " $date >= '$starttime' and $date <= '$endtime' ";
         $sql = '';
+
         switch($timediff){
             //所有
             case 1:
-                    $sql = "select date,registernum,createnum from $this->table_createDate where sid in ($server_ids) and $timecondition order by date asc";
+                    $sql = "select date,registernum,createnum from $this->table_createData where sid in ($server_ids) and $timecondition order by date asc";
                     break;
             //24小时
             case 2:

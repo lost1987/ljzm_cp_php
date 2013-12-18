@@ -9,7 +9,8 @@
 
 $methodTypes = array(
     0=>'user|invitefriend',//邀请朋友
-    1=>'user|register' //用户注册
+    1=>'user|register', //用户注册
+    2=>'gameurl|payurl' //游戏内充值连接
 );
 
 return $methodTypes;

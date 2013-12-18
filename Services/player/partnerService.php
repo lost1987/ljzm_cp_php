@@ -25,15 +25,14 @@ class PartnerService extends ServerDBChooser
             $huoban_list = $this->db->query($sql) -> result_objects();
             if(empty($huoban_list))return null;
 
-            $this->db->select_db($this->db_static);
+            $db_static = $this->getNewStaticDB();
             foreach($huoban_list as &$huoban){
                 $sql = "select name,color from $this->table_huoban where id = $huoban->hid";
-                $huobans_static = $this -> db -> query($sql)->result_object();
+                $huobans_static =$db_static -> query($sql)->result_object();
                 $huoban -> name = $huobans_static->name;
                 $huoban -> color = $this->getColor($huobans_static->color);
             }
 
-            $this->db->select_db($server->dynamic_dbname);
             foreach($huoban_list as &$huoban){
                 $huoban_item_ids = $this->get_huoban_item_ids($huoban);
                 if(!empty($huoban_item_ids)){
@@ -41,10 +40,8 @@ class PartnerService extends ServerDBChooser
                     $ditems = $this->db->query($sql)->result_objects();
                     $dynamic_item_ids = $this->get_dynamic_item_ids($ditems);
                     if(!empty($dynamic_item_ids)){
-                        $this->db->select_db($this->db_static);
                         $sql = "select name from $this->table_item where id in ($dynamic_item_ids)";
-                        $items = $this->db->query($sql) -> result_objects();
-                        $this->db->select_db($server->dynamic_dbname);
+                        $items = $db_static->query($sql) -> result_objects();
                     }
                     for($i = 0 ; $i < count($ditems) ; $i++){
                         $huoban -> {'zb'.($i+1)} = $items[$i]->name . ' +' . $ditems[$i]->strength;
@@ -53,12 +50,11 @@ class PartnerService extends ServerDBChooser
                 }
 
                 //每个伙伴有8个法宝
-                $this->db->select_db($this->db_static);
                 for($i = 1 ; $i < 9 ; $i++){
                     if(!empty($huoban -> {'fabao'.$i})){
                         $fabao_type = intval($huoban -> {'fabao'.$i} % 10000 / 100);
                         $fabao_color = intval($huoban -> {'fabao'.$i} % 100 / 10);
-                        $fabao_name = $this->db->query("select name from $this->table_fabao where type = $fabao_type and color=$fabao_color") ->result_object() ->name;
+                        $fabao_name = $db_static->query("select name from $this->table_fabao where type = $fabao_type and color=$fabao_color") ->result_object() ->name;
                         $huoban -> {'fabao_name'.$i} = $fabao_name;
                         $huoban -> {'fabao_color'.$i} = $this->getColor($fabao_color);
                         $huoban -> {'fabao_level'.$i} = intval($huoban -> {'fabao'.$i} % 10 + 1);
@@ -68,7 +64,6 @@ class PartnerService extends ServerDBChooser
                         $huoban -> {'fabao_level'.$i} = '';
                     }
                 }
-                $this->db->select_db($server->dynamic_dbname);
             }
 
             return $huoban_list;

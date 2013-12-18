@@ -110,7 +110,7 @@ class Mysql
      * @addonal 扩展方法
      */
 
-    public function select($sql){
+    public function select($sql='*'){
         $this -> _sql = 'SELECT '.$sql;
         return $this;
     }
@@ -350,7 +350,6 @@ class Mysql
             $sql_key .= ') ';
             $sql_val .= ')';
             $sql .= $tablename." ".$sql_key.' VALUES '.$sql_val ;
-
             if($this->query($sql)){
                 return TRUE;
             }

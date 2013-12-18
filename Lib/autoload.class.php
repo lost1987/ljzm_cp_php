@@ -29,5 +29,11 @@ abstract class Autoload
               return;
           }
 
+          $filename = lcfirst($className);
+          $path = BASEPATH.'/Services/'.$filename.'.php';
+          if(file_exists($path)){
+              require_once $path;
+              return;
+          }
       }
 }

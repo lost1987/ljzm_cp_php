@@ -15,6 +15,7 @@ set_time_limit(0);
 define('BASEPATH',dirname(__FILE__).DIRECTORY_SEPARATOR);
 require BASEPATH.'Conf/db.inc.php';
 require BASEPATH.'Common/common.php';
+require BASEPATH .'Common/low_function_fixed.php';
 require BASEPATH.'Conf/config.excel.php';
 require BASEPATH.'Lib/input.class.php';
 require BASEPATH.'Excel/excelmaker.class.php';

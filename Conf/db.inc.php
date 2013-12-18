@@ -21,6 +21,19 @@ define('DB_PORT','3306');
 define('DB_PREFIX','ljzm_');
 define('DB_STATIC','mmo2d_staticljzm');
 define('DB_BASE','mmo2d_baseljzm');
+define('TB_APIKEY',DB_PREFIX.'apikey');
+
+/*
+define('DB_HOST','192.168.20.229');
+define('DB_NAME','mmo2d_admin');
+define('DB_USER','root');
+//define('DB_PWD','li/5210270');
+define('DB_PWD','1234');
+define('DB_TYPE','Mysql');
+define('DB_PORT','3306');
+define('DB_PREFIX','ljzm_');
+define('DB_STATIC','mmo2d_staticljzm');
+define('DB_BASE','mmo2d_baseljzm');*/
 
 
 //define('MEMCACHED_HOST','115.238.101.156');

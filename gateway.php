@@ -24,6 +24,7 @@ require BASEPATH . '/Conf/db.inc.php';
 require BASEPATH . '/Conf/config.inc.php';
 require BASEPATH . '/Lib/autoload.class.php';
 require BASEPATH . '/Common/common.php';
+require BASEPATH . '/Common/low_function_fixed.php';
 
 if(ENVIRMENT == 'develop'){
     ini_set('display_errors','On');
