@@ -12,6 +12,6 @@ if(!function_exists('lcfirst')){
             $len = strlen($str);
             $prefix = substr($str,0,1);
             $duffix =  substr($str,1,$len);
-            return strtoupper($prefix).$duffix;
+            return strtolower($prefix).$duffix;
     }
 }
