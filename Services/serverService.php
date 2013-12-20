@@ -17,6 +17,7 @@ class ServerService extends Service implements IService
         $this -> table_buissnesser = DB_PREFIX.'buissnesser';
         $this -> table_version = DB_PREFIX.'versions';
         $this -> table_series = DB_PREFIX.'series';
+        $this-> table_cversion = DB_PREFIX.'client_versions';
     }
 
     public function lists($page,$condition=null)
@@ -24,15 +25,17 @@ class ServerService extends Service implements IService
         // TODO: Implement lists() method.
       /*  $sql = "select * from (select row_number() over (order by a.id desc) as rownumber, a.*,b.name as buissnesser from  $this->table_servers a,$this->table_buissnesser b where a.bid = b.id and a.stat=1 and b.stat=1) as t where t.rownumber > $page->start and t.rownumber <= $page->limit";
         $res = $this->db->query($sql)->result_objects();*/
-        $res = $this -> db -> select(" a.*,b.name as buissnesser,c.name as series,c.version")
-               -> from("$this->table_servers a,$this->table_buissnesser b,$this->table_version c")
-               -> where("a.bid = b.id and a.gamever = c.id")
+        $res = $this -> db -> select(" a.*,b.name as buissnesser,d.name as series,c.version,e.version as cversion")
+               -> from("$this->table_servers a,$this->table_buissnesser b,$this->table_version c,$this->table_series d,$this->table_cversion e")
+               -> where("a.bid = b.id and a.gamever = c.id and a.gameseries=d.id and a.gamecver=e.id")
                -> limit($page->start,$page->limit,'a.id desc')
                -> get()
                -> result_objects();
 
         foreach($res as &$obj){
-             $obj -> gamever = $obj->series.'_'.$obj->version;
+             $obj -> version = $obj->series.'_'.$obj->version;
+             $obj -> cversion = $obj->series.'_'.$obj->cversion;
+              if(!empty($obj->mergetime))
              $obj -> mergetime = date('Y-m-d H:i:s',$obj->mergetime);
         }
 
@@ -56,6 +59,7 @@ class ServerService extends Service implements IService
         $sid = isset($obj -> sid) ? $obj->sid : '';
         $payurl = $obj->payurl;
         $version = $obj->gamever;
+        $cversion = $obj->gamecver;
         $stat = $status;
         /**
          * sid的填写方式
@@ -67,11 +71,11 @@ class ServerService extends Service implements IService
 
         if(!isset($obj->id)){
             if($this->is_serverID_exists($sid))return FALSE;
-            $sql = "insert into $this->table_servers (id,name,ip,port,bid,dbuser,dbpwd,status,stat,dynamic_dbname,server_ip,server_port,payurl,gamever,gameseries)
-                    values ($sid,'$name','$ip',$port,$bid,'$dbuser','$dbpwd',$status,$stat,'$dynamic_dbname','$server_ip','$server_port','$payurl',$version,$series)";
+            $sql = "insert into $this->table_servers (id,name,ip,port,bid,dbuser,dbpwd,status,stat,dynamic_dbname,server_ip,server_port,payurl,gamever,gameseries,gamecver)
+                    values ($sid,'$name','$ip',$port,$bid,'$dbuser','$dbpwd',$status,$stat,'$dynamic_dbname','$server_ip','$server_port','$payurl',$version,$series,$cversion)";
             error_log($sql);
         }else{
-            $sql = "update $this->table_servers set name='$name',ip='$ip',port=$port,bid=$bid,dbuser='$dbuser',dbpwd='$dbpwd',status=$status,dynamic_dbname='$dynamic_dbname',server_ip='$server_ip',server_port='$server_port',stat=$stat,payurl='$payurl',gamever=$version,gameseries=$series where id = $obj->id";
+            $sql = "update $this->table_servers set name='$name',ip='$ip',port=$port,bid=$bid,dbuser='$dbuser',dbpwd='$dbpwd',status=$status,dynamic_dbname='$dynamic_dbname',server_ip='$server_ip',server_port='$server_port',stat=$stat,payurl='$payurl',gamever=$version,gameseries=$series,gamecver=$cversion  where id = $obj->id";
         }
 
         if($this->db->query($sql)->queryState){
@@ -145,8 +149,12 @@ class ServerService extends Service implements IService
         return FALSE;
     }
 
-    public function serversNoPageByExceptSid($sid){
-            $list =  $this->db->select(" a.id,a.name,b.name as bname ") -> from("$this->table_servers a,$this->table_buissnesser b") -> where(" a.bid = b.id and a.id <> $sid") -> get() -> result_objects();
+    public function serversNoPageByExceptSid($condition){
+            $sid = $condition->sid;
+            $version = $condition->version;
+            $series = $condition->series;
+            $cversion = $condition->cversion;
+            $list =  $this->db->select(" a.id,a.name,b.name as bname ") -> from("$this->table_servers a,$this->table_buissnesser b") -> where(" a.bid = b.id and a.id <> $sid and a.gamever = $version and a.gameseries = $series and a.gamecver = $cversion") -> get() -> result_objects();
             foreach($list as &$obj){
                $obj -> name = $obj->bname.'_'.$obj->name;
              }

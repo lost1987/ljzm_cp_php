@@ -6,10 +6,10 @@
  * Time: 上午9:56
  */
 
-class GameVerService extends Service{
-        function GameVerService(){
+class GameCVerService extends Service{
+        function GameCVerService(){
             parent::__construct();
-            $this->table_version = DB_PREFIX.'versions';
+            $this->table_version = DB_PREFIX.'client_versions';
             $this->table_server = DB_PREFIX.'servers';
             $this->table_series = DB_PREFIX.'series';
             $this->db->select_db(DB_NAME);
@@ -17,9 +17,9 @@ class GameVerService extends Service{
 
         public function lists($page){
             return $this -> db -> select('a.*,b.name') -> from("$this->table_version a , $this->table_series b")
-                         ->where(" a.series = b.id")
-                         -> limit($page->start,$page->limit,'id desc')
-                        -> get() -> result_objects();
+                ->where(" a.series = b.id")
+                -> limit($page->start,$page->limit,'id desc')
+                -> get() -> result_objects();
         }
 
 
@@ -54,7 +54,7 @@ class GameVerService extends Service{
                 $ids_array =  explode(',',$ids);
                 //先查询系列中 是否有版本在使用该系列 如果有 不予删除
                 foreach($ids_array as $id){
-                    $num = $this->db->query("select count(id) as num from $this->table_server where gamever = $id") -> result_object() -> num;
+                    $num = $this->db->query("select count(id) as num from $this->table_server where gamecver = $id") -> result_object() -> num;
                     if($num > 0){
                         $isDeletable = FALSE;
                         break;

@@ -30,7 +30,6 @@ class OperationlogService extends Service{
        }
 
        public function lists($page,$cond){
-                DB::$debug = true;
                 include BASEPATH.'/Common/log.php';
                 $condition = $this->getCondition($cond);
                 $list = $this->db->select() -> from($this->table_operationlog." $condition ")

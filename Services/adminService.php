@@ -66,7 +66,8 @@ class AdminService extends Service implements IService
               }
 
           }else{
-              $sql = "update $this->table_admin set passwd='$passwd',flagname='$flagname',bid=$bid where id = $admin->id";
+              $sql = "update $this->table_admin set flagname='$flagname',bid=$bid where id = $admin->id";
+              return $this->db->query($sql)->queryState;
           }
 
           return FALSE;

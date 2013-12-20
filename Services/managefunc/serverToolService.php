@@ -17,8 +17,8 @@ class ServerToolService extends ServerService{
         public function lists($page,$condition=null){
 
                 $condition = $this->getCondition($condition);
-                $list = $this->db->select("a.*,b.name as buissnesser,c.version")->from("$this->table_servers a , $this->table_buissnesser b ,$this->table_version c")
-                                        -> where("a.bid = b.id and a.gamever=c.id  $condition")
+                $list = $this->db->select("a.*,b.name as buissnesser,c.version,d.version as cversion")->from("$this->table_servers a , $this->table_buissnesser b ,$this->table_version c,$this->table_cversion d")
+                                        -> where("a.bid = b.id and a.gamever=c.id and a.gamecver=d.id $condition")
                                         ->limit($page->start,$page->limit,' a.id desc ')
                                         ->get() -> result_objects();
 
@@ -26,6 +26,11 @@ class ServerToolService extends ServerService{
                 $series_values = ArrayUtil::array_object_delete_repeat_values_by_key('gameseries',$list);
                 $series_values = implode(',',$series_values);
                 $series = $this->db->select('max(version) as lastversion,series')->from($this->table_version) -> where("series in ($series_values)")
+                                                        -> group_by(" series ")
+                                                        -> get()
+                                                        -> result_objects();
+
+                $cseries = $this->db->select('max(version) as lastversion,series')->from($this->table_cversion) -> where("series in ($series_values)")
                                                         -> group_by(" series ")
                                                         -> get()
                                                         -> result_objects();
@@ -51,6 +56,22 @@ class ServerToolService extends ServerService{
                                   $obj->lastversion = $s->lastversion;
                                   break 1;
                              }
+                        }
+
+                        foreach($cseries as $s){
+                            if($obj->gameseries == $s->series){
+
+                                if($obj->cversion < $s->lastversion){
+                                    $obj->cversion .= "(最新版本$s->lastversion)";
+                                    $obj->color = 'purple';
+                                }else{
+                                    // $obj->version .= '(最新)';
+                                    $obj->color = 'black';
+                                }
+
+                                $obj->lastcversion = $s->lastversion;
+                                break 1;
+                            }
                         }
 
                         $obj->operationable = 1;
@@ -91,6 +112,10 @@ class ServerToolService extends ServerService{
                       $sql .= " and a.gamever = $condition->version ";
                 }
 
+                if(!empty($condition->cversion)){
+                    $sql .= " and a.gamecver = $condition->cversion ";
+                }
+
                 return $sql;
         }
 
@@ -122,41 +147,105 @@ class ServerToolService extends ServerService{
 
 
         public function op_open($serverids,$admin){
-                  return  $this -> doOperation($serverids,$admin,ServerSysOperation::$OPERATION['open'],1,60);
+                  return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['open'],1,60);
         }
 
 
        public function op_stop($serverids,$admin){
-           return  $this -> doOperation($serverids,$admin,ServerSysOperation::$OPERATION['stop'],2);
+           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['stop'],2);
        }
 
 
        public function op_reboot($serverids,$admin){
-           return  $this -> doOperation($serverids,$admin,ServerSysOperation::$OPERATION['reboot'],3,60);
+           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['reboot'],3,60);
        }
 
 
-       public function op_updateVer($serverids,$admin){
-           return  $this -> doOperation($serverids,$admin,ServerSysOperation::$OPERATION['update'],4);
+       public function op_updateVer($serverids,$admin,$version){
+           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['update'],4,60,'','',$version);
        }
 
 
        public function  op_merge($fromserverids,$toserverid,$admin){
-           return  $this -> doOperation($toserverid,$admin,ServerSysOperation::$OPERATION['merge'],5,0,$fromserverids);
+           return  $this -> doOperationGameServer($toserverid,$admin,ServerSysOperation::$OPERATION['merge'],5,0,$fromserverids);
        }
 
 
        public function  op_rollback($serverid,$backupid,$admin){
-           return  $this -> doOperation($serverid,$admin,ServerSysOperation::$OPERATION['rollback'],6,0,'',$backupid);
+           return  $this -> doOperationGameServer($serverid,$admin,ServerSysOperation::$OPERATION['rollback'],6,0,'',$backupid);
        }
 
 
        public function  op_clear($serverid,$admin){
-          return  $this -> doOperation($serverid,$admin,ServerSysOperation::$OPERATION['clear'],7);
+          return  $this -> doOperationGameServer($serverid,$admin,ServerSysOperation::$OPERATION['clear'],7);
        }
 
+      public function op_updateCVer($serverid,$admin,$version){
+            return $this-> doOperationPublicServer($serverid,$admin,8,$version);
+      }
 
-       private function doOperation($serverids,$admin,$operation_type,$logtype,$sleep=0,$fromServerids='',$backupid=''){
+
+      public function doOperationPublicServer($serverid,$admin,$logtype,$version){
+          $info  = $this->db->select("a.id,a.name as sname") -> from("$this->table_servers a ")
+              -> where("a.id = $serverid ") -> get() -> result_object();
+          $filename = $version->seriesname.'_'.$version->version;
+
+          $params = array(
+              'admin' => $admin->admin,
+              'admin_flagname' => $admin->flagname,
+              'adminid' => $admin->id,
+              'donetime' => time(),
+              'logtype' => $logtype,
+              'state' => -1
+          );
+
+          //写入操作日志
+          $this->db->insert($this->table_operationlog,$params);
+          $logid = $this->db->insert_id();
+
+         $return = new stdClass();
+          exec('tasklist|findstr /i "ClientUpdate.exe"',$output,$stat);//检测是否有进程存在
+          if(!empty($output[0]) && $stat == 0){//进程存在不进行操作
+              $params=array(
+                  'failed_serverids' => $serverid,
+                  'failed_servernames'=>$info->sname
+              );
+              $return ->  success_serverids = '';
+              $return ->  success_servernames = '';
+              $return ->  failed_serverids = $serverid;
+              $return -> failed_servernames = $info->sname;
+              $return -> state = -2;
+          }else{
+                      $command ="c:\\server".$serverid."\\OpenServer ClientUpdate 1 ".$serverid." $filename".".zip $version->id $logid";
+                      exec($command,$output,$stat);
+
+                      if($stat == 0){
+                          $params=array(
+                              'success_serverids' => $serverid,
+                              'success_servernames'=>$info->sname
+                          );
+                          $return ->  success_serverids = $serverid;
+                          $return ->  success_servernames = $info->sname;
+                          $return ->  failed_serverids = '';
+                          $return -> failed_servernames = '';
+                      }else{
+                          $params=array(
+                              'failed_serverids' => $serverid,
+                              'failed_servernames'=>$info->sname
+                          );
+                          $return ->  success_serverids = '';
+                          $return ->  success_servernames = '';
+                          $return ->  failed_serverids = $serverid;
+                          $return -> failed_servernames = $info->sname;
+                      }
+          }
+
+          $this->db->update($this->table_operationlog,$params," id = $logid ");
+          return $return;
+      }
+
+
+       private function doOperationGameServer($serverids,$admin,$operation_type,$logtype,$sleep=0,$fromServerids='',$backupid='',$version=''){
            if(!empty($serverids)){
                $apikey = $this->getApiKey();
                $servers = $this->db->query("select * from $this->table_servers where id in ($serverids)")->result_objects();
@@ -169,26 +258,37 @@ class ServerToolService extends ServerService{
                }
 
                if($operation_type == 7){//更新必定为单项操作 所以serverids 是一个id
-                      $info  = $this->db->select("b.version,c.name") -> from("$this->table_servers a , $this->table_version b , $this->table_series c")
-                                    -> where("a.id = $serverids and  a.gamever = b.id and a.gameseries=c.id") -> get() -> result_object();
-                       $filename = $info->name.'_'.$info->version;
+                       $filename = $version->seriesname.'_'.$version->version;
                }
 
+               $state = -1;
+               if(in_array($logtype,array(1,2,3)))$state = 1;
                $params = array(
                    'admin' => $admin->admin,
                    'admin_flagname' => $admin->flagname,
                    'adminid' => $admin->id,
                    'donetime' => time(),
-                   'logtype' => $logtype
+                   'logtype' => $logtype,
+                   'state' => $state
                );
+
+               if(!empty($fromServerids)){
+                   $fromServers = $this->db->query("select * from $this->table_servers where id in ($fromServerids)")->result_objects();
+                   $from_Server_Ids = ArrayUtil::array_object_implode_values_by_key('id',',',$fromServers);
+                   $from_Server_Names = ArrayUtil::array_object_implode_values_by_key('name',',',$fromServers);
+                   $params['merged_serverids'] = $from_Server_Ids;
+                   $params['merged_servernames'] = $from_Server_Names;
+               }
+
                 //写入操作日志
                $this->db->insert($this->table_operationlog,$params);
                $logid = $this->db->insert_id();
 
 
+               if(!empty($version))$version = $version->id;
                $operation = new ServerSysOperation();
                $operation -> setOptions('ljzm_cp_api','operation.php');
-               $operation->send($servers,$operation_type,$apikey,$fromServerids,$filename,$logid);
+               $operation->send($servers,$operation_type,$apikey,$fromServerids,$filename,$logid,$version);
                $success_servers = $operation->getSuccessServers();
                $failed_servers = $operation->getFailedServers();
 
@@ -227,7 +327,16 @@ class ServerToolService extends ServerService{
                $return ->  failed_serverids = $failed_serverids;
                $return -> failed_servernames = $failed_servernames;
 
-               if($sleep!=0)sleep($sleep);
+               $results = $operation->getResults();
+               if(strpos($serverids,',') === FALSE)
+               $return -> state = $results[$serverids];
+
+               if(empty($failed_serverids)) {//只有全执行成功的时候 才会执行sleep 失败则立即返回结果
+                   if($sleep!=0)sleep($sleep);
+               }else{
+                   $params = array('state'=>1);
+                   $this->db->update($this->table_operationlog,$params," id = $logid ");
+               }
 
                return $return;
            }

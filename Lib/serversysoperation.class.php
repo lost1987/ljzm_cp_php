@@ -42,7 +42,7 @@ class ServerSysOperation {
      * @param $operation 操作 为 $operation数组中的之一
      * @param $validateCode 静态数据库ljzm_apikey里的id为1的值
      */
-    public function send($servers,$operation,$validateCode,$fromServerids='',$filename='',$logid=''){
+    public function send($servers,$operation,$validateCode,$fromServerids='',$filename='',$logid='',$version=''){
                     $time = time();
                     if(empty($this->api_folder_name) || empty($this->api_gateway))throw new Exception('options is unset');
 
@@ -63,7 +63,10 @@ class ServerSysOperation {
                                 $params['filename'] = $filename;
 
                          if(!empty($logid))
-                                $param['logid'] = $logid;
+                                $params['logid'] = $logid;
+
+                         if(!empty($version))
+                                $params['version'] = $version;
 
                          $ch = curl_init();
                          curl_setopt ($ch, CURLOPT_URL, $url.http_build_query($params));
