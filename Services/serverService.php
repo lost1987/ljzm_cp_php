@@ -73,7 +73,6 @@ class ServerService extends Service implements IService
             if($this->is_serverID_exists($sid))return FALSE;
             $sql = "insert into $this->table_servers (id,name,ip,port,bid,dbuser,dbpwd,status,stat,dynamic_dbname,server_ip,server_port,payurl,gamever,gameseries,gamecver)
                     values ($sid,'$name','$ip',$port,$bid,'$dbuser','$dbpwd',$status,$stat,'$dynamic_dbname','$server_ip','$server_port','$payurl',$version,$series,$cversion)";
-            error_log($sql);
         }else{
             $sql = "update $this->table_servers set name='$name',ip='$ip',port=$port,bid=$bid,dbuser='$dbuser',dbpwd='$dbpwd',status=$status,dynamic_dbname='$dynamic_dbname',server_ip='$server_ip',server_port='$server_port',stat=$stat,payurl='$payurl',gamever=$version,gameseries=$series,gamecver=$cversion  where id = $obj->id";
         }

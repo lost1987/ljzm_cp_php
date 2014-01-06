@@ -74,7 +74,7 @@ class ServerSysOperation {
 //                         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);//HTTPS特有设置
                          curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
                          curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-                         curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, 60);
+                         curl_setopt ($ch, CURLOPT_TIMEOUT, 5);
                          $result =  curl_exec($ch);
                          //error_log($result);
                          if(empty($result))$result = -3;

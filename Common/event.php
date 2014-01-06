@@ -95,6 +95,10 @@ $gameevent[84] = '消费红包';
 $gameevent[85] = '元宝赠送';
 $gameevent[86] = '充值返现';
 $gameevent[87] = '元宝宝箱';
+$gameevent[88] = '击杀世界Boss';
+$gameevent[89] = '世界Boss奖励';
+$gameevent[90] = '砸蛋获得';
+$gameevent[91] = '神龟获得';
 
 $gameevent[100] = '许愿消耗';
 $gameevent[101] = '补充精力';
@@ -211,3 +215,4 @@ $gameevent[234] = '三级生命符文';
 $gameevent[235] = '三级法力符文';
 $gameevent[236] = '初级荣誉卡';
 $gameevent[237] = '初级灵气卡';
+$gameevent[238] = '砸蛋消耗';

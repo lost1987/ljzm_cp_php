@@ -55,7 +55,7 @@ class ActivecodeService extends  ServerDBChooser
         $this -> db -> connect(DB_HOST.':'.DB_PORT,DB_USER,DB_PWD);
         $this -> db -> select_db($this->db_activecode);
         foreach($servers as $server){
-            $sql = "select count(id) as nums  from $this->table_activecode  group by
+            $sql = "select count(id) as nums  from $this->table_activecode where sid = $server->id  group by
                 name,ctime";
             $templist = $this -> db -> query($sql) -> result_objects();
             if(is_array($templist)){

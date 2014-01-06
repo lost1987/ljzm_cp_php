@@ -27,6 +27,16 @@ class GameVerService extends Service{
                 $version = $form->version;
                 $series_id = $form->series_id;
 
+
+                //查询是否存在同系列 的同版本
+                $ver = $this->db->select('count(id) as num') -> from($this->table_version)
+                    ->where(" version = $version and series = $series_id ")
+                    -> get() -> result_object();
+
+                if($ver -> num > 0){
+                    return FALSE;
+                }
+
                 $params = array(
                     'version' => $version,
                     'series' => $series_id
@@ -90,7 +100,9 @@ class GameVerService extends Service{
         }
 
        public function listsNoPageBySeriesAndVersion($series,$version){
-           $list = $this -> db -> select("a.*,b.name as seriesname") -> from("$this->table_version a , $this->table_series b") ->where("a.series = $series and a.series = b.id and a.id <> $version")
+           $ver = $this->db->select('version')->from($this->table_version) ->where("id = $version") -> get() -> result_object();
+           $version_name = $ver->version;
+           $list = $this -> db -> select("a.*,b.name as seriesname") -> from("$this->table_version a , $this->table_series b") ->where("a.series = $series and a.series = b.id and a.id <> $version and a.version > $version_name")
                -> get() -> result_objects();
 
            return $list;

@@ -90,7 +90,9 @@ class GameCVerService extends Service{
         }
 
        public function listsNoPageBySeriesAndVersion($series,$version){
-           $list = $this -> db -> select("a.*,b.name as seriesname") -> from("$this->table_version a , $this->table_series b") ->where("a.series = $series and a.series = b.id and a.id <> $version")
+           $ver = $this->db->select('version')->from($this->table_version) ->where("id = $version") -> get() -> result_object();
+           $version_name = $ver->version;
+           $list = $this -> db -> select("a.*,b.name as seriesname") -> from("$this->table_version a , $this->table_series b") ->where("a.series = $series and a.series = b.id and a.id <> $version and a.version > $version_name")
                -> get() -> result_objects();
 
            return $list;

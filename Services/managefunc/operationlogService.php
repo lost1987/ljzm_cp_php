@@ -40,8 +40,10 @@ class OperationlogService extends Service{
                        $obj->logname = $log_operation_type[$obj->logtype];
                        if($obj->state == 1){
                            $obj->statename = '已完成';
-                       }else{
+                       }else if($obj->state == -1){
                            $obj->statename = '执行中';
+                       }else{
+                           $obj->statename = '执行失败';
                        }
 
                        $obj->donetime = date('Y-m-d H:i:s',$obj->donetime);

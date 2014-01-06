@@ -12,6 +12,7 @@ class ServerToolService extends ServerService{
               parent::__construct();
               $this->table_operationlog = DB_PREFIX.'operationlog';
              $this->table_backupdata = DB_PREFIX.'backlog';
+             set_time_limit(0);
         }
 
         public function lists($page,$condition=null){
@@ -83,7 +84,7 @@ class ServerToolService extends ServerService{
                              $obj->stat = 'url错误';
                              $obj->operationable = -1;
                         }
-                        else{
+                        else{//物理服务器没有部署接口 ljzm_cp_api
                               $obj->stat = '检测失败';
                               $obj->operationable = -1;
                         }
@@ -162,7 +163,7 @@ class ServerToolService extends ServerService{
 
 
        public function op_updateVer($serverids,$admin,$version){
-           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['update'],4,60,'','',$version);
+           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['update'],4,0,'','',$version);
        }
 
 
@@ -204,11 +205,13 @@ class ServerToolService extends ServerService{
           $logid = $this->db->insert_id();
 
          $return = new stdClass();
+
           exec('tasklist|findstr /i "ClientUpdate.exe"',$output,$stat);//检测是否有进程存在
-          if(!empty($output[0]) && $stat == 0){//进程存在不进行操作
+          if(!empty($output[0]) && $stat == 0){//进程存在
               $params=array(
                   'failed_serverids' => $serverid,
-                  'failed_servernames'=>$info->sname
+                  'failed_servernames'=>$info->sname,
+                  'state' => -2 //执行失败
               );
               $return ->  success_serverids = '';
               $return ->  success_servernames = '';
@@ -216,28 +219,32 @@ class ServerToolService extends ServerService{
               $return -> failed_servernames = $info->sname;
               $return -> state = -2;
           }else{
-                      $command ="c:\\server".$serverid."\\OpenServer ClientUpdate 1 ".$serverid." $filename".".zip $version->id $logid";
-                      exec($command,$output,$stat);
-
-                      if($stat == 0){
-                          $params=array(
-                              'success_serverids' => $serverid,
-                              'success_servernames'=>$info->sname
-                          );
-                          $return ->  success_serverids = $serverid;
-                          $return ->  success_servernames = $info->sname;
-                          $return ->  failed_serverids = '';
-                          $return -> failed_servernames = '';
-                      }else{
-                          $params=array(
-                              'failed_serverids' => $serverid,
-                              'failed_servernames'=>$info->sname
-                          );
-                          $return ->  success_serverids = '';
-                          $return ->  success_servernames = '';
-                          $return ->  failed_serverids = $serverid;
-                          $return -> failed_servernames = $info->sname;
-                      }
+              $command ="c:\\OpenServer ClientUpdate 1 ".$serverid." $filename".".zip $version->id $logid";
+              //error_log($command);
+              exec($command,$output,$stat);
+              if(!empty($output[0]) && $stat == 0){
+                  $params=array(
+                      'success_serverids' => $serverid,
+                      'success_servernames'=>$info->sname,
+                      'state' => 1
+                  );
+                  $return ->  success_serverids = $serverid;
+                  $return ->  success_servernames =$info->sname;
+                  $return ->  failed_serverids = '';
+                  $return -> failed_servernames = '';
+                  $return -> state = 1;
+              }else{
+                  $params=array(
+                      'failed_serverids' => $serverid,
+                      'failed_servernames'=>$info->sname,
+                      'state' => -2 //执行失败
+                  );
+                  $return ->  success_serverids = '';
+                  $return ->  success_servernames = '';
+                  $return ->  failed_serverids = $serverid;
+                  $return -> failed_servernames = $info->sname;
+                  $return -> state = 1;
+              }
           }
 
           $this->db->update($this->table_operationlog,$params," id = $logid ");
@@ -262,7 +269,7 @@ class ServerToolService extends ServerService{
                }
 
                $state = -1;
-               if(in_array($logtype,array(1,2,3)))$state = 1;
+               //if(in_array($logtype,array(1,2,3)))$state = 1;
                $params = array(
                    'admin' => $admin->admin,
                    'admin_flagname' => $admin->flagname,
@@ -334,7 +341,7 @@ class ServerToolService extends ServerService{
                if(empty($failed_serverids)) {//只有全执行成功的时候 才会执行sleep 失败则立即返回结果
                    if($sleep!=0)sleep($sleep);
                }else{
-                   $params = array('state'=>1);
+                   $params = array('state'=>-2);
                    $this->db->update($this->table_operationlog,$params," id = $logid ");
                }
 

@@ -9,6 +9,12 @@
  */
 class NoticeService extends ServerDBChooser
 {
+
+    private $notice_types = array(
+               array('id' => 1, 'name'=>'聊天窗和滚动栏' ),
+               array('id' => 2, 'name'=>'仅聊天窗' )
+    );
+
     function NoticeService(){
         $this -> table_notice = $this->prefix_2.'notice';
     }
@@ -23,11 +29,17 @@ class NoticeService extends ServerDBChooser
                  $this->dbConnect($server,$server->dynamic_dbname);
                  $starttime = $this->db->datetime('starttime');
                  $endtime = $this->db->datetime('endtime');
-                 $sql = "select id,$starttime as starttime,$endtime as endtime,time,context from  $this->table_notice order by endtime desc";
+                 $sql = "select id,$starttime as starttime,$endtime as endtime,time,context,type from  $this->table_notice order by endtime desc";
                  $templist = $this -> db -> query($sql) -> result_objects();
                  foreach($templist as $obj){
                      if($flag >= $page->start && $flag <= $page -> limit){
                          $obj->servername = $server -> name;
+                         foreach($this->notice_types as $_notice){
+                                if($_notice['id'] == $obj->type){
+                                     $obj->typename = $_notice['name'];
+                                     break;
+                                }
+                         }
                          $log = new Syslog();
                          $slog = $log -> getlogByRefer($obj->id,'id',$server->id);
                          $obj->flagname = empty($slog->flagname) ? '' : $slog->flagname;
@@ -71,6 +83,7 @@ class NoticeService extends ServerDBChooser
         $endtime = empty($notice -> endtime) ? date('Y-m-d H:i:s',strtotime($starttime)+60) : $notice->endtime;
         $context = $notice -> context;
         $type = $notice -> type;//0:单次 1:循环
+        $notice_type = $notice->notice_type;
 
         $starthour = date('H',strtotime($starttime));
         $endhour = date('H',strtotime($endtime));
@@ -118,8 +131,8 @@ class NoticeService extends ServerDBChooser
                 $id = intval($res->mid) + 1;
                 $db -> trans_begin();
                 $executed_dbs[] = $db;
-                $sql = "insert into $this->table_notice (id,context,time,starttime,endtime,starthour,startmin,endhour,endmin)
-                    values ($id,'$context',$time,'$starttime','$endtime',$starthour,$startmin,$endhour,$endmin)";
+                $sql = "insert into $this->table_notice (id,context,time,starttime,endtime,starthour,startmin,endhour,endmin,type)
+                    values ($id,'$context',$time,'$starttime','$endtime',$starthour,$startmin,$endhour,$endmin,$notice_type)";
                 if(!$db -> query($sql)->queryState)throw new Exception('notice write data error!');
 
                 $log = new stdClass();
@@ -196,6 +209,10 @@ class NoticeService extends ServerDBChooser
             }
         }
         return TRUE;
+    }
+
+    public function getNoticeTypes($null){
+         return $this->notice_types;
     }
 
 }

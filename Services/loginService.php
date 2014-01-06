@@ -23,6 +23,8 @@ class LoginService extends Service
         $password = $admin -> password;
 
         $admin = $this -> db -> query("select id,passwd,permission,bid,flagname from $this->table_admin where admin='$username'")->result_object();
+        if($admin==FALSE)return null;
+
         $return = null;
         if($admin->passwd == md5($password.APPKEY)){
 

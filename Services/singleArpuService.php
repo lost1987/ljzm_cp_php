@@ -20,6 +20,7 @@ class SingleArpuService extends ServerDBChooser
         $endtime = $condition -> endtime.' 23:59:59';
 
         if(count($servers) > 0){
+            include BASEPATH.'/Common/event.php';
             $slist = array();
             $list = array();
             $rechargenum = 0;//总充值人数
@@ -50,6 +51,7 @@ class SingleArpuService extends ServerDBChooser
             $return_array = array();
             $flag = 0;
             foreach($list as $k=>$v){
+                    $v -> str = $gameevent[$v->eventtype];
                     $v -> offer_percent = number_format($v->offer/$yuanbao_total,6) * 100 .'%';
                     if($rechargenum==0)$v->arpu=0;
                     else $v -> arpu = number_format($v->offer/10/$rechargenum,2);
