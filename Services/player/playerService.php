@@ -142,6 +142,7 @@ class PlayerService extends ServerDBChooser
     protected  function getCondition($condition){
         $account_or_name = str_replace(' ','',$condition -> account_or_name);
         $opstate = intval($condition->opstate);
+        $account_prefix = $condition -> account_prefix;
         $condition_sql = '';
 
         if($condition->onlinestatus == 1){
@@ -157,6 +158,14 @@ class PlayerService extends ServerDBChooser
                  $condition_sql .= "  (account_name like '$account_or_name%' or name like '$account_or_name%')";
             }else{
                 $condition_sql .= "and  (account_name like '$account_or_name%' or name like '$account_or_name%')";
+            }
+        }
+
+        if(!empty($account_prefix)){
+            if(empty($condition_sql)){
+                $condition_sql .= "  account_name like '$account_prefix%' ";
+            }else{
+                $condition_sql .= "and  account_name like '$account_prefix%' ";
             }
         }
 
@@ -289,6 +298,8 @@ class PlayerService extends ServerDBChooser
            $condonline = '';
            if($online && !empty($playername_or_id))$condonline = ' and defencecap = 1 and state=0';
            else if($online && empty($playername_or_id))$condonline = '  defencecap = 1 and state=0';
+
+
            foreach ($servers as $server){
                $this->dbConnect($server,$server->dynamic_dbname);
                $sql = "select id,name from $this->table_player where $cond $condonline";

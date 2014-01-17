@@ -51,6 +51,11 @@ Class complexDataService extends  Service {
                   $obj -> $k = 'N/A';
               }
 
+              /*修正注册数*/
+              if($obj->registernum < $obj->createnum || $obj->registernum == 'N/A'){
+                  $obj->registernum = $obj->createnum;
+              }
+
               if(gettype($obj->arpu) == 'double')
               $obj->arpu = number_format($obj->arpu,2);
               if(gettype($obj->newarpu) == 'double')
@@ -101,6 +106,11 @@ Class complexDataService extends  Service {
          foreach($obj as $k => &$v){
              if(empty($v))$v = 'N/A';
          }
+
+        /*修正注册数*/
+        if($obj->registernum < $obj->createnum || $obj->registernum == 'N/A'){
+            $obj->registernum = $obj->createnum;
+        }
 
         $sql = "select overyuanbao72,overyuanbao from $this->table_complex where $date = '$endtime'";
         $temp = $this->db->query($sql)->result_object();

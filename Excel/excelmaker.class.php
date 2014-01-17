@@ -89,6 +89,7 @@ class ExcelMaker extends Input
             case 0:
                 $this -> results = call_user_func(array($service,$this->params['method']),$page,$condition);
                 break;
+
             case 1:
                 //查询服务器 组成数组
                 $db =  new DB();
@@ -106,9 +107,11 @@ class ExcelMaker extends Input
                 $condition->servers = $servers;
                 $this -> results = call_user_func(array($service,$this->params['method']),$condition);
                 break;
+
             case 3:
                 $this -> results = call_user_func(array($service,$this->params['method']),$condition);
                 break;
+
             case 4:
                 $db = new DB();
                 $db -> connect(DB_HOST.':'.DB_PORT,DB_USER,DB_PWD);
@@ -124,6 +127,15 @@ class ExcelMaker extends Input
                 $condition -> child_type = $this->post('child_type');
 
                 $this->results = call_user_func(array($service,$this->params['method']),$page,$condition);
+                break;
+
+            case 5 :
+                $db =  new DB();
+                $db -> connect(DB_HOST.':'.DB_PORT,DB_USER,DB_PWD);
+                $db -> select_db($this->dbname);
+                $server = $db -> query("select * from $this->table_servers where id = $condition->server_ids")->result_object();
+                $condition->server = $server;
+                $this -> results = call_user_func(array($service,$this->params['method']),$condition);
                 break;
         }
     }

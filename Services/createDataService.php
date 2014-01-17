@@ -40,6 +40,10 @@ class CreateDataService extends Service
 
         if($timediff == 1){//因flex端无法识别 YYYY-MM-DD HH:NN:SS的格式所以这里做下处理
             foreach($list as &$obj){
+                if($obj->registernum < $obj->createnum){
+                     $obj->registernum = $obj->createnum;
+                }
+
                 $dateCollection = explode(' ',$obj->date);
                 $date = explode('/',$dateCollection[0]);
                 $time = explode(':',$dateCollection[1]);
@@ -47,6 +51,9 @@ class CreateDataService extends Service
             }
         }else{
             foreach($list as &$obj){
+                if($obj->registernum < $obj->createnum){
+                    $obj->registernum = $obj->createnum;
+                }
                 $obj->date = date('Y-m-d',strtotime($obj->date));
             }
         }

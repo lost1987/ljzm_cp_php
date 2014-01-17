@@ -11,9 +11,10 @@ $GLOBALS['excel_keys'] = array(
      /***
       * 0表示service继承Service(传入$condition对象[只需要传入按逗号分割的server_id],$page对象),
       * 1表示service继承ServerDBChooser(传入$condition对象[需传入server对象数组],$page对象),
-      * 2表示service继承ServerDBChooser(只需传入$condition对象)
+      * 2表示service继承ServerDBChooser(只需传入$condition对象 condition有属性servers 多服)
       * 3表示service继承Service(只需传入$condition对象)
       * 4表示service继承ServerDBChooser($page对象,传入$condition对象[需传入server对象数组]),
+      * 5表示service继承ServerDBChooser(只需传入$condition对象 condition 有属性server 单服)
       */
     /***综合数据****/
     'synthesis_list' => 'complexDataService|lists|0',
@@ -27,6 +28,7 @@ $GLOBALS['excel_keys'] = array(
     'dailyCopyData_list' => 'dailyCopyDataService|lists|0',
     'dailyActivityData_list' => 'dailyActivityDataService|lists|0',
     'userAnalysisData_list' => 'userAnalysisDataService|lists|2',
+    'payMonth_list' => 'payMonthService|lists|5',
 
     /*****日志*******/
     'yuanbao_list' => 'yuanbaoService|lists|4',

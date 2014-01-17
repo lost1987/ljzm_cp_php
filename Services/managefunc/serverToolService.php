@@ -153,7 +153,7 @@ class ServerToolService extends ServerService{
 
 
        public function op_stop($serverids,$admin){
-           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['stop'],2);
+           return  $this -> doOperationGameServer($serverids,$admin,ServerSysOperation::$OPERATION['stop'],2,30);
        }
 
 
@@ -170,7 +170,6 @@ class ServerToolService extends ServerService{
        public function  op_merge($fromserverids,$toserverid,$admin){
            return  $this -> doOperationGameServer($toserverid,$admin,ServerSysOperation::$OPERATION['merge'],5,0,$fromserverids);
        }
-
 
        public function  op_rollback($serverid,$backupid,$admin){
            return  $this -> doOperationGameServer($serverid,$admin,ServerSysOperation::$OPERATION['rollback'],6,0,'',$backupid);

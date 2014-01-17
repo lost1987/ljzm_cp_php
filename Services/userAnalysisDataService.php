@@ -17,67 +17,65 @@ class userAnalysisDataService extends ServerDBChooser{
 
     public function lists($condition){
         set_time_limit(0);
-        $server_ids = $condition->server_ids;
+        $server_id = $condition->server_id;
         $starttime = $condition->starttime;
         $endtime = $condition->endtime;
         $dateArray = timeTickArrayPoint($starttime,$endtime,60*60*24);
         $starttimestamp = strtotime($starttime);
         $endtimestamp = strtotime($endtime.' 23:59:59');
 
-        $servers = $this -> getServers($server_ids);
+        $server = $this -> getServer($server_id);
         $list = array();
-        foreach($servers as $server){
-            $this->dbConnect($server,$server->dynamic_dbname);
-            //查询时间段内的总注册UID
-            $totalnewusers = $this->db -> select("id,unix_timestamp(left(createdate,10)) as date")
-                            -> from ($this->table_user)
-                            -> where("unix_timestamp(left(createdate,10)) >= $starttimestamp and unix_timestamp(left(createdate,10)) <= $endtimestamp")
-                            -> get()->result_objects();
-            if(count($totalnewusers) == 0)return array();
-            //把时间归类 ,按日期手动分组
-            $totalnewusers = $this->make_group($totalnewusers,$dateArray);
+        $this->dbConnect($server,$server->dynamic_dbname);
+        //查询时间段内的总注册UID
+        $totalnewusers = $this->db -> select("id,unix_timestamp(left(createdate,10)) as date")
+                        -> from ($this->table_user)
+                        -> where("unix_timestamp(left(createdate,10)) >= $starttimestamp and unix_timestamp(left(createdate,10)) <= $endtimestamp")
+                        -> get()->result_objects();
+        if(count($totalnewusers) == 0)return array();
+        //把时间归类 ,按日期手动分组
+        $totalnewusers = $this->make_group($totalnewusers,$dateArray);
 
-            //查询时间段内的总用户充值UID 注意这里的pid 会有重复值 后面使用array_unique来去除
-            $totalrechargeusers = $this->db->select("id1 as id,unix_timestamp(left(time,10)) as date")
-                                    -> from($this->table_record)
-                                    -> where("unix_timestamp(left(time,10)) >= $starttimestamp and unix_timestamp(left(time,10)) <= $endtimestamp and
-                                     param4 = 44 and id2=0 and param1=90000001")
-                                    ->get() -> result_objects();
-            $totalrechargeusers = $this->make_group($totalrechargeusers,$dateArray);
+        //查询时间段内的总用户充值UID 注意这里的pid 会有重复值 后面使用array_unique来去除
+        $totalrechargeusers = $this->db->select("id1 as id,unix_timestamp(left(time,10)) as date")
+                                -> from($this->table_record)
+                                -> where("unix_timestamp(left(time,10)) >= $starttimestamp and unix_timestamp(left(time,10)) <= $endtimestamp and
+                                 param4 = 44 and id2=0 and param1=90000001")
+                                ->get() -> result_objects();
+        $totalrechargeusers = $this->make_group($totalrechargeusers,$dateArray);
 
-            $obj = new stdClass();
-            $obj->datedesp= "新增玩家";
-            $obj->row = -1;
-            for($i=0;$i<30;$i++){//纵向
-                    $element = new stdClass();
-                    $element->datedesp = '第'.$i.'天';
-                    $element->row = $i;
-                    $flag = 0;
-                    foreach($dateArray as $date){//横向
-                            $date_key_current = date('Y-m-d',$date+$i*60*60*24);//当前日期的纵向第$i个格子的key
-                            $date_key_source = date('Y-m-d',$date);
-                            $element->{'createnum'.$flag} = $createnum = count($totalnewusers[$date_key_source]->pids);
-                            if($createnum != 0 && ($date+$i*60*60*24) <= $endtimestamp){//防止日期超出
-                                $element -> {'createInRechargeNum'.$flag} = $this->createInRecharge($totalnewusers[$date_key_source]->pids,array_unique($totalrechargeusers[$date_key_current]->pids));
-                                //$createInRechargeNum = $this->createInRecharge($totalnewusers[$date_key_source]->pids,array_unique($totalrechargeusers[$date_key_current]->pids));
-                               // $element->{'num'.$flag} = $createInRechargeNum.'('.number_format($createInRechargeNum/$createnum,2)*100 .'%)';
-                            }else{
-                               // $element->{'num'.$flag} = ' ';
-                                $element-> {'createnum'.$flag} = 0;
-                                 $element -> {'createInRechargeNum'.$flag} = 0;
-                            }
+        $obj = new stdClass();
+        $obj->datedesp= "新增玩家";
+        $obj->row = -1;
+        for($i=0;$i<30;$i++){//纵向
+                $element = new stdClass();
+                $element->datedesp = '第'.$i.'天';
+                $element->row = $i;
+                $flag = 0;
+                foreach($dateArray as $date){//横向
+                        $date_key_current = date('Y-m-d',$date+$i*60*60*24);//当前日期的纵向第$i个格子的key
+                        $date_key_source = date('Y-m-d',$date);
+                        $element->{'createnum'.$flag} = $createnum = count($totalnewusers[$date_key_source]->pids);
+                        if($createnum != 0 && ($date+$i*60*60*24) <= $endtimestamp){//防止日期超出
+                            $element -> {'createInRechargeNum'.$flag} = $this->createInRecharge($totalnewusers[$date_key_source]->pids,array_unique($totalrechargeusers[$date_key_current]->pids));
+                            //$createInRechargeNum = $this->createInRecharge($totalnewusers[$date_key_source]->pids,array_unique($totalrechargeusers[$date_key_current]->pids));
+                           // $element->{'num'.$flag} = $createInRechargeNum.'('.number_format($createInRechargeNum/$createnum,2)*100 .'%)';
+                        }else{
+                           // $element->{'num'.$flag} = ' ';
+                            $element-> {'createnum'.$flag} = 0;
+                             $element -> {'createInRechargeNum'.$flag} = 0;
+                        }
 
-                            if($i == 0){
-                                //$obj->{'num'.$flag} = $createnum;
-                                $obj->{'createnum'.$flag} = $createnum;
-                                $obj->{'createInRechargeNum'.$flag} = 0;
-                            }
-                            $flag++;
-                    }
+                        if($i == 0){
+                            //$obj->{'num'.$flag} = $createnum;
+                            $obj->{'createnum'.$flag} = $createnum;
+                            $obj->{'createInRechargeNum'.$flag} = 0;
+                        }
+                        $flag++;
+                }
 
-                    if($i==0)$list[]=$obj;
-                    $list[] = $element;
-            }
+                if($i==0)$list[]=$obj;
+                $list[] = $element;
         }
 
         //进行数据合并

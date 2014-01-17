@@ -58,6 +58,7 @@ class PayService extends ServerDBChooser
         $level_limit = $condition -> level_limit;
         $vip_start = $condition -> vip_start;
         $vip_limit = $condition -> vip_limit;
+        $orderid = isset($condition -> orderid) ? $condition->orderid : '';
 
         $sql = '';
         if(!empty($starttime) && !empty($endtime)){
@@ -86,8 +87,12 @@ class PayService extends ServerDBChooser
                 $cond4 = " ((b.mask0%100) >= $vip_start and (b.mask0%100) <= $vip_limit) ";
         }
 
+        if(!empty($orderid)){
+            $cond5 = " str2 = '$orderid'";
+        }
+
         if(isset($cond1)){
-            $sql .= $cond1;
+            $sql .= ' and ' .$cond1;
         }
 
         if(isset($cond2)){
@@ -114,7 +119,28 @@ class PayService extends ServerDBChooser
             }
         }
 
-        if(empty($sql)) return ' where a.param4 = 44 and id2=0 and param1=90000001 ';
-        return $sql = ' where a.param4 = 44 and  id2=0 and param1=90000001 and '.$sql;
+        if(isset($cond5)){
+            if(!empty($sql))
+                $sql .= ' and '.$cond5;
+            else
+                $sql .= $cond5;
+        }
+
+        if(empty($sql)) return " where a.param4 = 44 and id2=0 and param1=90000001 and SUBSTR(str2,1,6) <> 'REWARD' ";
+        return $sql = " where a.param4 = 44 and  id2=0 and param1=90000001 and SUBSTR(str2,1,6) <> 'REWARD' ".$sql;
+    }
+
+    public function payTotal($condition){
+        $this->dbConnect($condition->server,$condition->server->dynamic_dbname);
+        $condSql = $this->getCondition($condition);
+
+        $total = $this -> db -> select("sum(a.param2) as yuanbao")
+            -> from("$this->table_record a left join $this->table_player b")
+            -> on("a.id1=b.id")
+            -> where($condSql)
+            -> get()->result_object();
+
+        $rmb = $total->yuanbao/10;
+        return $rmb;
     }
 }

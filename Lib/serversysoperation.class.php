@@ -85,7 +85,7 @@ class ServerSysOperation {
                          }else{
                                  $this->failed_servers[] = $server;
                          }
-
+                         usleep(100000);
                      }
             }
 

@@ -216,3 +216,5 @@ $gameevent[235] = '三级法力符文';
 $gameevent[236] = '初级荣誉卡';
 $gameevent[237] = '初级灵气卡';
 $gameevent[238] = '砸蛋消耗';
+$gameevent[239] = '砸蛋消耗';
+$gameevent[240] = '注册';
